@@ -1,0 +1,28 @@
+{
+    "urls": {
+        "main": "https://www.doctrine.fr/",
+        "cabs": "https://www.doctrine.fr/annuaire/cabinet/"
+    },
+    "slt": {
+        "login": {
+            "nav_btn": "#nav_connection_button",
+            "mail_input_field": "#modal_login_email",
+            "password_input_field": "#modal_login_password",
+            "submit_btn": "body > div.ReactModalPortal > div > div > div > div > form > div:nth-child(4) > button",
+            "displayed_if_logged": "#header-user-picture"
+        },
+        "cabs": {
+            "nb_page_for_letter": "body > div:nth-child(2) > div.page_layout-module__content--7qxng > div > div > div:nth-child(4) > div > div",
+            "link_to_n_letter_page": "/annuaire/cabinet/",
+            "link_to_cab": "/p/cabinet/"
+        }
+    },
+    "wb": {
+        "name": "data.xlsx",
+        "ws": {
+            "cabinets": "Cabinets",
+            "avocats": "Avocats",
+            "domaines": "Domaines"
+        }
+    }
+}
