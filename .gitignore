@@ -1,6 +1,8 @@
 config.json
 package.json
 data.xlsx
+credentials.json
+gsheet.js
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,yarn,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,yarn,visualstudiocode

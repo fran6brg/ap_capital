@@ -5,59 +5,46 @@ const puppeteer = require('puppeteer');
 const config = require('./config.json');
 const params = require('./params.json');
 const chalk = require('chalk');
-const Excel = require('exceljs')
+// const Excel = require('exceljs');
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+const creds = require('./credentials.json');
 
 // connect to account with puppeteer
-(async () => { 
+async function login(){ 
+    /* -------------------------------- */
     let browser = await puppeteer.launch({
-        headless: false,
+        // headless: false,
         args: [
         '--no-sandbox',
         // '--headless',
         '--disable-gpu',
         '--window-size=3000x1500'] 
     });
+    /* -------------------------------- */
     let page = await browser.newPage();
-    await page.goto(params.urls.main, { waitUntil: 'networkidle0' });
+    console.log("page user agent: " + browser.userAgent());
+    // await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
+    /* -------------------------------- */
+    await page.goto(params.urls.main, { waitUntil: 'domcontentloaded' });
     await page.click(params.slt.login.nav_btn);
-    await page.type(params.slt.login.mail_input_field, config.mail, { delay: 30 });
-    await page.type(params.slt.login.password_input_field, config.password, { delay: 30 });
+    await page.type(params.slt.login.mail_input_field, config.francis.mail, { delay: 30 });
+    await page.type(params.slt.login.password_input_field, config.francis.password, { delay: 30 });
     // await page.click(params.slt.login.submit_btn);
     await Promise.all([ await page.click(params.slt.login.submit_btn) ]);
-    await page.waitForNavigation({ waitUntil: 'networkidle0'});
-    await page.waitFor(15000);
+    await page.waitForNavigation({ waitUntil: 'domcontentloaded'});
+    // await page.waitForTimeout(1500);
+    /* -------------------------------- */
     try {
         console.log("trying to login");
-        await page.waitFor(params.slt.login.displayred_if_logged);            
+        await page.waitFor(params.slt.login.displayed_if_logged);            
         console.log(chalk.green("successfully logged in"));
     } catch (error) {
         console.error("failed to login");
         process.exit(0);
     }
-})();
+}
 
-// 
-let failed = [];
-(async () => {
-    var wb = new Excel.Workbook();
-    await wb.xlsx.readFile('./linkedin_v2.xlsx')
-        .then(function () {
-            var worksheet = wb.getWorksheet('links');
-            worksheet.eachRow({ includeEmpty: true }, function (row, rowNumber) {
-                // console.log("Row " + rowNumber + " = " + JSON.stringify(row.values));
-                if (row.values[4] == "na" || row.values[4].includes("broke url, can't fetch") || row.values[4].includes("unhandled error")) {
-                    let fail = {
-                        row: rowNumber,
-                        name: row.values[1],
-                        site: row.values[2]
-                    }
-                    failed.push(fail);
-                }
-            });
-        });
-    console.table(failed);
-})();
-
+// auto scroll page
 async function autoScroll(page){
     await page.evaluate(async () => {
         await new Promise((resolve, reject) => {
@@ -77,30 +64,77 @@ async function autoScroll(page){
 }
 
 // get links
-(async () => {
-    var workbook = new Excel.Workbook();
-    await workbook.xlsx.readFile(params.wb.name)
-    let worksheet = await workbook.getWorksheet(params.wb.ws.cabinets)
+async function scrapper() {
+    /* -------------------------------- */
+    let browser = await puppeteer.launch({
+        headless: false,
+        args: [
+        '--no-sandbox',
+        '--headless',
+        '--disable-gpu',
+        '--window-size=3000x1500'] 
+    });
+    /* -------------------------------- */
+    let page = await browser.newPage();
+    console.log("page user agent: " + browser.userAgent());
+    // await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
+    /* -------------------------------- */
+    await page.goto(params.urls.main, { waitUntil: 'domcontentloaded' });
+    await page.click(params.slt.login.nav_btn);
+    await page.type(params.slt.login.mail_input_field, config.francis.mail, { delay: 30 });
+    await page.type(params.slt.login.password_input_field, config.francis.password, { delay: 30 });
+    // await page.click(params.slt.login.submit_btn);
+    await Promise.all([ await page.click(params.slt.login.submit_btn) ]);
+    await page.waitForNavigation({ waitUntil: 'domcontentloaded'});
+    // await page.waitForTimeout(1500);
+    /* -------------------------------- */
+    try {
+        console.log("trying to login");
+        await page.waitFor(params.slt.login.displayed_if_logged);            
+        console.log(chalk.green("successfully logged in"));
+    } catch (error) {
+        console.error("failed to login");
+        process.exit(0);
+    }
+    // /* -------------------------------- */
+    // var workbook = new Excel.Workbook();
+    // await workbook.xlsx.readFile(params.wb.name)
+    // let worksheet = await workbook.getWorksheet(params.wb.ws.cabinets)
+    /* -------------------------------- */
+    const doc = new GoogleSpreadsheet(params.gsheet.id);
+    await doc.useServiceAccountAuth({
+        client_email: creds.client_email,
+        private_key: creds.private_key,
+    });
+    await doc.loadInfo();
+    const sheet = doc.sheetsByIndex[0];
     /* -------------------------------- */
     let index = 1;
+    let letter = 0;
+    let hrefs = [];
     // for (i = 0; i < 26; i++) { console.log((i + 10).toString(36)) };
     for (letter = 0; letter < 26; letter++) {
         try {
-            let url = params.urls.cabs + (letter + 10).toString(36) + "/"
+            /* -------------------------------- */
+            let url = params.urls.cabs + (letter + 10).toString(36) + "/1"
+            console.log("go to " + url);
             await page.goto(url, { waitUntil: 'domcontentloaded' });
             await page.setViewport({
                 width: 1200,
                 height: 800
             });
+            await page.waitForTimeout(1500);
             /* -------------------------------- */
             await autoScroll(page);
             /* -------------------------------- */
-            const hrefs = await page.evaluate(
+            hrefs = []
+            hrefs = await page.evaluate(
                 () => Array.from(
                     document.querySelectorAll('a[href]'),
                     a => a.getAttribute('href')
                 )
             );
+            console.log("   nb hrefs retrieved: " + hrefs.length);
             /* -------------------------------- */
             let nb_page_for_letter = 1;
             for (var i = 0; i < hrefs.length; i++) {
@@ -110,47 +144,83 @@ async function autoScroll(page){
                     }
                 }
             }
+            console.log("   nb pages (for letter " + (letter + 10).toString(36) + "): " + nb_page_for_letter);
             /* -------------------------------- */
-            let cabs_urls = [];
-            for (var i = 1; i <= nb_page_for_letter; i++) {
-                if (i > 1) {
-                    let link = params.slt.cabs.link_to_n_letter_page + (letter + 10).toString(36) + "/"
-                    await page.goto(link_completed, { waitUntil: 'domcontentloaded' });
-                    ; // get hrefs
+            for (var nb_page = 1; nb_page <= nb_page_for_letter; nb_page++) {
+                /* -------------------------------- */
+                let cabs_url = [];
+                /* -------------------------------- */
+                if (nb_page > 1) {
+                    /* -------------------------------- */
+                    url = params.urls.main.slice(0, -1)
+                        + params.slt.cabs.link_to_n_letter_page
+                        + (letter + 10).toString(36)
+                        + "/"
+                        + nb_page
+                    console.log("go to " + url);
+                    await page.goto(url, { waitUntil: 'domcontentloaded' });
+                    await page.setViewport({
+                        width: 1200,
+                        height: 800
+                    });
+                    await page.waitForTimeout(1500);
+                    /* -------------------------------- */
+                    await autoScroll(page);
+                    /* -------------------------------- */
+                    hrefs = []
+                    hrefs = await page.evaluate(
+                        () => Array.from(
+                            document.querySelectorAll('a[href]'),
+                            a => a.getAttribute('href')
+                        )
+                    );
+                    /* -------------------------------- */
                 }
+                /* -------------------------------- */
                 for (var i = 0; i < hrefs.length; i++) {
-                    if (hrefs[i].includes(params.slt.cabs_urls.link_to_cab)) {
-                        cabs_urls.push(hrefs[i]);
+                    if (hrefs[i].includes(params.slt.cabs.link_to_cab)) {
+                        cabs_url.push(hrefs[i]);
                     }
                 }
-            }
-            /* -------------------------------- */
-            for (var i = 0; i < cabs_urls.length; i++) {
-                let row = {
-                    id: worksheet.getCell('A' + index + 1),
-                    letter: worksheet.getCell('B' + index + 1),
-                    page: worksheet.getCell('C' + index + 1),
-                    // name: worksheet.getCell('D' + index + 1),
-                    // city: worksheet.getCell('E' + index + 1),
-                    // address: worksheet.getCell('F' + index + 1),
-                    // creation: worksheet.getCell('G' + index + 1),
-                    // nb_lawyer: worksheet.getCell('H' + index + 1),
-                    // nb_cab_decisions: worksheet.getCell('I' + index + 1),
-                    url: worksheet.getCell('J' + index + 1)
+                console.log("   nb cabs url retrieved: " + cabs_url.length);
+                /* -------------------------------- */
+                let rows = [];
+                for (var i = 0; i < cabs_url.length; i++) {
+                    let row = {
+                        id: '',
+                        letter: '',
+                        number: '',
+                        url: ''
+                    }
+                    rows.push(row);
+                    // console.log("   row: index=" + index + " | letter=" + (letter + 10).toString(36) + " | page_i=" + nb_page + " | url=" + cabs_url[i]);
+                    /* -------------------------------- */
+                    row.id = 'c' + (letter + 10).toString(36) + nb_page;
+                    row.letter = (letter + 10).toString(36);
+                    row.number = nb_page;
+                    row.url = params.urls.main.slice(0, -1) + cabs_url[i];
+                    /* -------------------------------- */
+                    // workbook.xlsx.writeFile(params.wb.name);
+                    /* -------------------------------- */
+                    index++;
                 }
-                row.id.value = index;
-                row.letter.value = (letter + 10).toString(36);
-                // row.letter.page = ; ??????????
-                row.url.value = cabs_urls[i];
+                await sheet.addRows(rows);
+                console.log(chalk.green("   +" + cabs_url.length + " cabs added to excel"));
             }
-            workbook.xlsx.writeFile(params.wb.name);
-            /* -------------------------------- */
-            /* -------------------------------- */
         }
         catch (error) {
-            console.error("1: " + error)
+            console.error("for 1: " + error);
+            continue;
         }
     }
     /* -------------------------------- */
     await browser.close();
-})();
+}
+
+/* -------------------------------- */
+async function main() {
+    // await login();
+    await scrapper();
+}
+  
+main();
