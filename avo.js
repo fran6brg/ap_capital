@@ -72,6 +72,19 @@ async function scrapper() {
     await doc.loadInfo();
     const sheet = doc.sheetsByIndex[0];
     /* -------------------------------- */
+    let range = 'A1:A'.concat(sheet.rowCount);
+    console.log('range: ' + range);
+    await sheet.loadCells(range);
+    console.log('cells loaded');
+    let ids = [];
+    for (var i = 1; i < sheet.rowCount; i++) {
+        let id = sheet.getCell(i, 0).value;
+        if (!ids.includes(id))
+            ids.push(id);
+    }
+    // console.table(ids);
+    console.log("ids.length: " + ids.length);
+    /* -------------------------------- */
     let index = 1;
     let letter = 0;
     let hrefs = [];
@@ -80,7 +93,7 @@ async function scrapper() {
         try {
             /* -------------------------------- */
             let url = params.urls.avos + (letter + 10).toString(36) + "/1"
-            console.log("go to " + url);
+            console.log("go to " + url + " to get nb_page_for_letter");
             await page.goto(url, { waitUntil: 'domcontentloaded' });
             await page.setViewport({
                 width: 1200,
@@ -108,6 +121,10 @@ async function scrapper() {
                 }
             }
             console.log("   nb pages (for letter " + (letter + 10).toString(36) + "): " + nb_page_for_letter);
+            if (nb_page_for_letter >= 100) {
+                console.error("nb_page_for_letter: " + nb_page_for_letter + " >= 100");
+                process.exit(0);
+            }
             /* -------------------------------- */
             for (var nb_page = 1; nb_page <= nb_page_for_letter; nb_page++) {
                 /* -------------------------------- */
@@ -118,7 +135,15 @@ async function scrapper() {
                     + (letter + 10).toString(36)
                     + "/"
                     + nb_page
-                console.log("go to " + url);
+                /* -------------------------------- */
+                let id = 'a' + (letter + 10).toString(36) + ('0' + nb_page).slice(-2);
+                if (ids.includes(id))
+                {
+                    console.log(chalk.blue("    " + url + " already scrapped => continue"));
+                    continue
+                }
+                /* -------------------------------- */
+                console.log("go to " + url + " to get rows");
                 await page.goto(url, { waitUntil: 'domcontentloaded' });
                 await page.setViewport({
                     width: 1200,
@@ -139,7 +164,7 @@ async function scrapper() {
                     let name_addr = await (await avo_cards[i].getProperty('innerText')).jsonValue();
                     let tab = name_addr.split(/\r?\n/);
                     let row = {
-                        id: 'c' + (letter + 10).toString(36) + ('0' + nb_page).slice(-2),
+                        id: 'a' + (letter + 10).toString(36) + ('0' + nb_page).slice(-2),
                         letter: (letter + 10).toString(36),
                         number: nb_page,
                         name: tab[0].trim(),
