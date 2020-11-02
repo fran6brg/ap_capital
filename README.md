@@ -1,6 +1,8 @@
 # ap_capital
 freelance mission for AP Capital
 
+![](scrapping.gif)
+
 ### doc
 - https://medium.com/@filipvitas/how-to-set-user-agent-header-with-puppeteer-js-and-not-fail-28c7a02165da
 - https://www.youtube.com/watch?v=UGN6EUi4Yio&t=3s
