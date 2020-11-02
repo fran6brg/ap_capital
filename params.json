@@ -4,7 +4,7 @@
     },
     "urls": {
         "main": "https://www.doctrine.fr/",
-        "cabs": "https://www.doctrine.fr/annuaire/cabinet/"
+        "avos": "https://www.doctrine.fr/annuaire/avocat/"
     },
     "slt": {
         "login": {
@@ -17,7 +17,12 @@
         "cabs": {
             "nb_page_for_letter": "body > div:nth-child(2) > div.page_layout-module__content--7qxng > div > div > div:nth-child(4) > div > div",
             "link_to_n_letter_page": "/annuaire/cabinet/",
-            "link_to_cab": "/p/cabinet/"
+            "card": ".lawfirm-module__cell--1GkjU"
+        },
+        "avos": {
+            "nb_page_for_letter": "body > div:nth-child(2) > div.page_layout-module__content--7qxng > div > div > div:nth-child(4) > div > div",
+            "link_to_n_letter_page": "/annuaire/avocat/",
+            "card": ".lawyer-module__cell--1nPeq"
         }
     },
     "wb": {
