@@ -1,5 +1,5 @@
 # ap_capital
-freelance mission for AP Capital
+mission for AP Capital
 ![](scrapping.gif)
 
 ### readings
